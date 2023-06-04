@@ -1,0 +1,59 @@
+version: '3.2'
+services:
+  redis:
+    image: docker.io/bitnami/redis:6.2
+    hostname: redis
+    environment:
+    # ALLOW_EMPTY_PASSWORD is recommended only for development.
+    - ALLOW_EMPTY_PASSWORD=yes
+    - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+    - "6379:6379"
+    volumes:
+    - redis_data:/bitnami/redis/data
+    networks:
+    - ultron-net
+    links:
+    - logstash
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "udp://10.111.22.175:1514"
+        syslog-format: "rfc5424micro"
+        tag: "redis-dev-1.0.0"
+    deploy:   
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==DEV]   
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    hostname: rediscommander
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "18081:8081"
+    networks:
+      - ultron-net
+    links:
+    - logstash  
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "udp://10.111.22.175:1514"
+        syslog-format: "rfc5424micro"
+        tag: "redis-commander-dev-1.0.0"  
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==DEV]     
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  ultron-net:
+    external: true
