@@ -1,0 +1,69 @@
+version: '3.2'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    hostname: elasticsearch
+    environment:
+      - node.name=elasticsearch-01
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms4096m -Xmx4096m -Des.index.max_number_of_shards=128"
+    volumes:
+     - /docker_dir/elk_tools/elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200 
+    networks:
+     - ultron-net
+    deploy:   
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.9.3
+    hostname: logstash
+    user: root
+    ports:
+      - 1514:1514/udp
+      - 1514:1514/tcp
+    depends_on:
+      - "kibana"
+
+    environment:
+      - MONITORING_ENABLED=false
+    volumes:
+      - /docker_dir/elk_tools/logstash/pipeline/:/usr/share/logstash/pipeline/
+      - /docker_dir/elk_tools/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml
+    networks:
+     - ultron-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.2
+    hostname: kibana
+    ports:
+      - 5601:5601
+    depends_on:
+      - "elasticsearch"
+
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_MONITORING_ENABLED=true
+    volumes:
+      - /docker_dir/elk_tools/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      - ultron-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]   
+
+networks:
+  ultron-net:
+    external: true

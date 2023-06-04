@@ -1,0 +1,20 @@
+server.host: 0.0.0.0
+
+#xpack.security.encryptionKey: "12345678901234567890123456789012"
+
+elasticsearch.hosts: http://elasticsearch:9200
+#elasticsearch.username: "kibana"
+#elasticsearch.password: "kibanapassword"
+
+xpack:
+  security:
+    enabled: false
+  infra:
+    sources:
+      default:
+        logAlias: "logstash-*"
+        fields:
+          timestamp: "@timestamp"
+          message: ["message"]
+          host: "host"
+          container: "syslog_program"
