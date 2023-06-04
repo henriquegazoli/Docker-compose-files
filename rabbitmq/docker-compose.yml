@@ -1,0 +1,29 @@
+version: '3.2'
+services:
+    rabbitmq:
+        image: rabbitmq:3.7.2-management
+        hostname: rabbitmq
+        environment:
+            TZ: ${TZ}
+        ports:
+            - 15672:15672
+            - 5672:5672
+        volumes:
+            - /docker_dir/rabbitmq/config:/etc/rabbitmq
+            - /docker_dir/rabbitmq/data:/var/lib/rabbitmq
+        networks:
+        - ultron-net
+        logging:
+          driver: "syslog"
+          options:
+            syslog-address: "udp://10.111.22.175:1514"
+            syslog-format: "rfc5424micro"
+            tag: "rabbitmq-dev-1.0.0"
+        deploy:   
+          mode: replicated
+          replicas: 1
+          placement:
+            constraints: [node.labels.ENV==DEV]   
+networks:
+  ultron-net:
+    external: true
