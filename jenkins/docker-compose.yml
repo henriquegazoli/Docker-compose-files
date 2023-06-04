@@ -1,0 +1,41 @@
+version: '3.2'
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk11
+    hostname: jenkins
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dhudson.footerURL=http://0.0.0.0:8080 
+      - JENKINS_USER=data-info
+      - JENKINS_PASS=80925b13 
+    ports:
+      - 18080:8080
+      - 50000:50000
+    volumes:
+      - /usr/vdocker/data/jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - ultron-net
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "udp://10.111.22.175:1514"
+        syslog-format: "rfc5424micro"
+        tag: "jenkins-1.0.0"  
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]
+
+volumes:
+  jenkins_data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "/var/vdocker"
+ 
+networks:
+  ultron-net:
+    external: true
+    name: ultron-net
