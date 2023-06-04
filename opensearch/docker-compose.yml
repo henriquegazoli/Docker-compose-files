@@ -1,0 +1,92 @@
+version: '3'
+services:
+  opensearch-node1:
+    image: opensearchproject/opensearch:2.1.0
+    hostname: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=10.111.22.175:9200,10.111.22.176:9200
+      - cluster.initial_master_nodes=10.111.22.175:9200,10.111.22.176:9200
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 262144 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 262144
+    volumes:
+      - /docker_dir/opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - ultron-net
+    deploy:   
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]  
+  opensearch-node2:
+    image: opensearchproject/opensearch:2.1.0
+    hostname: opensearch-node2
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=10.111.22.175:9200,10.111.22.176:9200
+      - cluster.initial_master_nodes=10.111.22.175:9200,10.111.22.176:9200
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - /docker_dir/opensearch-data2:/usr/share/opensearch/data
+    networks:
+      - ultron-net
+    deploy:   
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.labels.ENV==MANAGER]  
+  # dashboards:
+  #   image: opensearchproject/opensearch-dashboards:2.1.0
+  #   hostname: opensearch-dashboards
+  #   ports:
+  #     - 5601:5601
+  #   environment:
+  #     OPENSEARCH_HOSTS: '["https://10.111.22.175:9200","https://10.111.22.176:9200"]' # must be a string with no spaces when specified as an environment variable
+  #   networks:
+  #     - ultron-net
+  #   deploy:   
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       constraints: [node.labels.ENV==MANAGER]  
+  # output:
+  #   image: opensearchproject/logstash-oss-with-opensearch-output-plugin:7.16.2
+  #   hostname: output
+  #   ports:
+  #     - 1514:1514/udp
+  #     - 1514:1514/tcp
+  #   networks:
+  #     - ultron-net 
+  #   volumes:
+  #     - ./pipeline/:/usr/share/logstash/pipeline/
+  #     - ./pipeline/config/logstash.yml:/usr/share/logstash/config/logstash.yml  
+  #   deploy:   
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+        constraints: [node.labels.ENV==MANAGER]   
+
+
+networks:
+  ultron-net:
+    external: true  
